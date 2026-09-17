@@ -71,10 +71,23 @@
             phryg_dom: [0, 1, 4, 5, 7, 8, 10, 12],
             "lydian_#2": [0, 3, 4, 6, 7, 9, 11, 12],
             super_locrien_bb7: [0, 1, 3, 4, 6, 8, 9, 12],
+            hungarian_minor: [0, 2, 3, 6, 7, 8, 11, 12],
+            hungarian_major: [0, 3, 4, 6, 7, 9, 10, 12],
+            neapolitan_major: [0, 1, 3, 5, 7, 9, 11, 12],
+            neapolitan_minor: [0, 1, 3, 5, 7, 8, 11, 12],
+            enigmatic: [0, 1, 4, 6, 8, 10, 11, 12],
+            prometheus: [0, 2, 4, 6, 9, 10, 12],
+            persian: [0, 1, 4, 5, 6, 8, 11, 12],
+            byzantine: [0, 1, 4, 5, 7, 8, 11, 12],
+            chinese: [0, 4, 6, 7, 11, 12],
             pentatonic_major: [0, 2, 4, 7, 9, 12],
             pentatonic_minor: [0, 3, 5, 7, 10, 12],
             blues_minor: [0, 3, 5, 6, 7, 10, 12],
             blues_major: [0, 2, 3, 4, 7, 9, 12],
+            hirajoshi: [0, 2, 3, 7, 8, 12],
+            insen: [0, 1, 5, 7, 10, 12],
+            iwato: [0, 1, 5, 6, 10, 12],
+            yo: [0, 2, 5, 7, 9, 12],
             whole_tone: [0, 2, 4, 6, 8, 10, 12],
             diminished_hw: [0, 1, 3, 4, 6, 7, 9, 10, 12],
             diminished_wh: [0, 2, 3, 5, 6, 8, 9, 11, 12],
@@ -130,7 +143,11 @@
             pentatonic_major: [0, 1, 2, 4, 5, 7],
             pentatonic_minor: [0, 2, 3, 4, 6, 7],
             blues_minor: [0, 2, 3, 3, 4, 6, 7],
-            blues_major: [0, 1, 2, 2, 4, 5, 7]
+            blues_major: [0, 1, 2, 2, 4, 5, 7],
+            hirajoshi: [0, 1, 2, 4, 5, 7],
+            insen: [0, 1, 4, 5, 6, 7],
+            iwato: [0, 1, 4, 5, 6, 7],
+            yo: [0, 1, 3, 4, 5, 7]
         };
 
         let pianoInstrument = null;
@@ -252,8 +269,10 @@
                                 <option value="locrian_#2">Locrien #2</option>
                                 <option value="altered">Altérée</option>
                             </optgroup>
-                            <optgroup label="Mineure Harmonique">
+                            <optgroup label="Mineure Harmonique & Hongroises">
                                 <option value="harmonic_minor">Mineure harmonique</option>
+                                <option value="hungarian_minor">Hongroise mineure (Tzigane)</option>
+                                <option value="hungarian_major">Hongroise majeure</option>
                                 <option value="locrian_6">Locrien 6</option>
                                 <option value="ionian_#5">Ionien augmenté</option>
                                 <option value="dorian_#4">Dorien #4</option>
@@ -261,11 +280,24 @@
                                 <option value="lydian_#2">Lydien #2</option>
                                 <option value="super_locrien_bb7">Ultra locrien</option>
                             </optgroup>
+                            <optgroup label="Exotiques & Spéciales">
+                                <option value="neapolitan_major">Napolitaine majeure</option>
+                                <option value="neapolitan_minor">Napolitaine mineure</option>
+                                <option value="enigmatic">Énigmatique</option>
+                                <option value="prometheus">Prométhée</option>
+                                <option value="persian">Persane</option>
+                                <option value="byzantine">Byzantine</option>
+                                <option value="chinese">Chinoise</option>
+                            </optgroup>
                             <optgroup label="Pentatoniques & Blues">
                                 <option value="pentatonic_major">Pentatonique majeure</option>
                                 <option value="pentatonic_minor">Pentatonique mineure</option>
                                 <option value="blues_minor">Blues mineure</option>
                                 <option value="blues_major">Blues majeure</option>
+                                <option value="hirajoshi">Hirajōshi (Japonaise)</option>
+                                <option value="insen">Insen (Japonaise)</option>
+                                <option value="iwato">Iwato (Japonaise)</option>
+                                <option value="yo">Yō (Japonaise)</option>
                             </optgroup>
                             <optgroup label="Symétriques & Autres">
                                 <option value="whole_tone">Par tons</option>
@@ -281,7 +313,7 @@
                                 <option value="maqam_nahawand">Maqâm Nahawand</option>
                                 <option value="maqam_kurd">Maqâm Kurd</option>
                             </optgroup>
-                            <optgroup label="Les Râgas">
+                            <optgroup label="Gammes indiennes">
                                 <option value="raga_bilawal">Râga Bilawal</option>
                                 <option value="raga_kalyan">Râga Kalyan</option>
                                 <option value="raga_bhairav">Râga Bhairav</option>
@@ -396,6 +428,8 @@
                 } else if (scaleKey === 'blues_major') {
                     const bluesMajorMap = [0, 1, 2, 2, 4, 5, 7];
                     degreeIndex = bluesMajorMap[index] !== undefined ? bluesMajorMap[index] : index;
+                } else if (scaleDegreeMappings[scaleKey] && scaleDegreeMappings[scaleKey][index] !== undefined) {
+                    degreeIndex = scaleDegreeMappings[scaleKey][index];
                 }
 
                 let key = '';
