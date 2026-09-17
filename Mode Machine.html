@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mode Machine</title>
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #1e1e1e; color: #fff; min-height: 100vh; box-sizing: border-box; }
+        select, input[type="range"] { padding: 8px; margin-right: 10px; background: #333; color: #fff; border: 1px solid #555; vertical-align: middle; }
+        label { margin-right: 5px; font-size: 14px; }
+        #container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+        .generator-box { background: #2a2a2a; padding: 15px; border-radius: 6px; border: 1px solid #444; position: relative; padding-top: 25px; box-sizing: border-box; }
+        .output { margin-top: 15px; background: #fff; color: #333; display: block; padding: 10px; border-radius: 4px; cursor: pointer; box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 200px; overflow: hidden; }
+        .vf-stavenote { cursor: pointer; }
+        .vf-stavenote:hover path { fill: #007acc; stroke: #007acc; }
+        .interval-item { display: inline-block; padding: 10px 15px; margin: 5px; background: #f0f0f0; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 18px; text-align: center; }
+        .interval-item:hover { background: #007acc; color: #fff; border-color: #005999; }
+        
+        @media (max-width: 768px) {
+            body { margin: 10px; }
+            .global-controls { gap: 10px; }
+            .generator-box { width: 100% !important; max-width: 100% !important; padding: 10px; padding-top: 25px; }
+            .header-row > div { flex-wrap: wrap !important; white-space: normal !important; gap: 8px; }
+            .output { width: 100% !important; overflow-x: auto; justify-content: flex-start; }
+        }
+
+        @media print {
+            body { background: #fff; color: #000; }
+            .global-controls { display: none !important; }
+            .generator-box { border: none; background: #fff; color: #000; page-break-inside: avoid; }
+            .generator-box button { display: none !important; }
+            .output { background: #fff !important; color: #000 !important; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body ondblclick="handleBodyClick(event)">
+    <div class="global-controls" style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <div>
+            <label for="volume">Volume :</label>
+            <input type="range" id="volume" min="0" max="15" step="0.5" value="8.0" oninput="updateVolume(this.value)">
+        </div>
+        <button onclick="generateAllModes()" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">Générer tous les modes</button>
+        <button onclick="resetGenerators()" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">Réinitialiser</button>
+        <button onclick="window.print()" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">Imprimer</button>
+    </div>
+    <div id="container"></div>
+
+    <script>
+        const { Stave, StaveNote, Voice, Formatter, Renderer, Accidental } = Vex.Flow;
+
+        const scaleIntervals = {
+            major: [0, 2, 4, 5, 7, 9, 11, 12],
+            dorian: [0, 2, 3, 5, 7, 9, 10, 12],
+            phrygian: [0, 1, 3, 5, 7, 8, 10, 12],
+            lydian: [0, 2, 4, 6, 7, 9, 11, 12],
+            mixolydian: [0, 2, 4, 5, 7, 9, 10, 12],
+            natural_minor: [0, 2, 3, 5, 7, 8, 10, 12],
+            locrian: [0, 1, 3, 5, 6, 8, 10, 12],
+            melodic_minor: [0, 2, 3, 5, 7, 9, 11, 12],
+            dorian_b2: [0, 1, 3, 5, 7, 9, 10, 12],
+            lydian_augmented: [0, 2, 4, 6, 8, 9, 11, 12],
+            lydian_dominant: [0, 2, 4, 6, 7, 9, 10, 12],
+            mixolydian_b6: [0, 2, 4, 5, 7, 8, 10, 12],
+            "locrian_#2": [0, 2, 3, 5, 6, 8, 10, 12],
+            altered: [0, 1, 3, 4, 6, 8, 10, 12],
+            harmonic_minor: [0, 2, 3, 5, 7, 8, 11, 12],
+            locrian_6: [0, 1, 3, 5, 8, 9, 10, 12],
+            "ionian_#5": [0, 2, 4, 5, 8, 9, 11, 12],
+            "dorian_#4": [0, 2, 3, 6, 7, 9, 10, 12],
+            phryg_dom: [0, 1, 4, 5, 7, 8, 10, 12],
+            "lydian_#2": [0, 3, 4, 6, 7, 9, 11, 12],
+            super_locrien_bb7: [0, 1, 3, 4, 6, 8, 9, 12],
+            pentatonic_major: [0, 2, 4, 7, 9, 12],
+            pentatonic_minor: [0, 3, 5, 7, 10, 12],
+            blues_minor: [0, 3, 5, 6, 7, 10, 12],
+            blues_major: [0, 2, 3, 4, 7, 9, 12],
+            whole_tone: [0, 2, 4, 6, 8, 10, 12],
+            diminished_hw: [0, 1, 3, 4, 6, 7, 9, 10, 12],
+            diminished_wh: [0, 2, 3, 5, 6, 8, 9, 11, 12],
+            augmented: [0, 3, 4, 7, 8, 11, 12],
+            double_harmonic: [0, 1, 4, 5, 7, 8, 11, 12],
+            maqam_rast: [0, 2, 3, 5, 7, 9, 10, 12],
+            maqam_bayati: [0, 1, 3, 5, 7, 8, 10, 12],
+            maqam_hijaz: [0, 1, 4, 5, 7, 8, 10, 12],
+            maqam_nahawand: [0, 2, 3, 5, 7, 8, 10, 12],
+            maqam_kurd: [0, 1, 3, 5, 7, 8, 10, 12],
+            raga_bilawal: [0, 2, 4, 5, 7, 9, 11, 12],
+            raga_kalyan: [0, 2, 4, 6, 7, 9, 11, 12],
+            raga_bhairav: [0, 1, 4, 5, 7, 8, 11, 12],
+            raga_todi: [0, 1, 3, 6, 7, 8, 11, 12],
+            raga_asavari: [0, 2, 3, 5, 7, 8, 10, 12],
+            dastgah_shur: [0, 1, 3, 5, 7, 8, 10, 12],
+            dastgah_mahur: [0, 2, 4, 5, 7, 9, 11, 12],
+            dastgah_homayoun: [0, 1, 4, 5, 7, 8, 10, 12],
+            dastgah_chahargah: [0, 1, 4, 5, 7, 8, 11, 12],
+            gamelan_slendro: [0, 2, 5, 7, 10, 12],
+            gamelan_pelog: [0, 1, 3, 7, 8, 12]
+        };
+
+        const semitoneToIntervalName = {
+            0: "1", 1: "b2", 2: "2", 3: "b3", 4: "3", 5: "4",
+            6: "#4", 7: "5", 8: "b6", 9: "6", 10: "b7", 11: "7", 12: "1"
+        };
+
+        const tonicData = {
+            'c': { letter: 'C', semitone: 0, letterIdx: 0 },
+            'c#': { letter: 'C', semitone: 1, letterIdx: 0 },
+            'db': { letter: 'D', semitone: 1, letterIdx: 1 },
+            'd': { letter: 'D', semitone: 2, letterIdx: 1 },
+            'd#': { letter: 'D', semitone: 3, letterIdx: 1 },
+            'eb': { letter: 'E', semitone: 3, letterIdx: 2 },
+            'e': { letter: 'E', semitone: 4, letterIdx: 2 },
+            'f': { letter: 'F', semitone: 5, letterIdx: 3 },
+            'f#': { letter: 'F', semitone: 6, letterIdx: 3 },
+            'gb': { letter: 'G', semitone: 6, letterIdx: 4 },
+            'g': { letter: 'G', semitone: 7, letterIdx: 4 },
+            'g#': { letter: 'G', semitone: 8, letterIdx: 4 },
+            'ab': { letter: 'A', semitone: 8, letterIdx: 5 },
+            'a': { letter: 'A', semitone: 9, letterIdx: 5 },
+            'a#': { letter: 'A', semitone: 10, letterIdx: 5 },
+            'bb': { letter: 'B', semitone: 10, letterIdx: 6 },
+            'b': { letter: 'B', semitone: 11, letterIdx: 6 }
+        };
+
+        const letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        const naturalSemitones = { 'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11 };
+
+        const scaleDegreeMappings = {
+            pentatonic_major: [0, 1, 2, 4, 5, 7],
+            pentatonic_minor: [0, 2, 3, 4, 6, 7],
+            blues_minor: [0, 2, 3, 3, 4, 6, 7],
+            blues_major: [0, 1, 2, 2, 4, 5, 7]
+        };
+
+        let pianoInstrument = null;
+        let audioCtx = null;
+        let gainNode = null;
+        let currentActiveElement = null;
+
+        function initAudio(callback) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if ('audioSession' in navigator) {
+                    navigator.audioSession.type = 'playback';
+                }
+
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = parseFloat(document.getElementById('volume').value);
+                gainNode.connect(audioCtx.destination);
+
+                Soundfont.instrument(audioCtx, 'acoustic_grand_piano', { destination: gainNode }).then(function (inst) {
+                    pianoInstrument = inst;
+                    if (callback) callback();
+                }).catch(err => {
+                    console.error("Échec du chargement des échantillons de piano", err);
+                });
+            } else if (pianoInstrument && callback) {
+                callback();
+            }
+        }
+
+        function updateVolume(val) {
+            if (gainNode && audioCtx) {
+                gainNode.gain.setValueAtTime(parseFloat(val), audioCtx.currentTime);
+            }
+        }
+
+        function playMidi(midi, duration = 0.8) {
+            if (!pianoInstrument) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            pianoInstrument.play(midi, audioCtx.currentTime, { duration: duration });
+        }
+
+        function stopAllAudio() {
+            if (pianoInstrument) {
+                pianoInstrument.stop();
+            }
+        }
+
+        function stopCurrentPlayback() {
+            stopAllAudio();
+            document.querySelectorAll('.generator-box').forEach(b => {
+                if (b.activeTimeouts) {
+                    b.activeTimeouts.forEach(t => clearTimeout(t));
+                    b.activeTimeouts = [];
+                }
+            });
+            currentActiveElement = null;
+        }
+
+        function handleBodyClick(e) {
+            if (!e.target.closest('.generator-box') && !e.target.closest('.global-controls')) {
+                addGenerator();
+            }
+        }
+
+        function toggleView(btn) {
+            const box = btn.closest('.generator-box');
+            if (box.dataset.view === 'intervals') {
+                box.dataset.view = 'stave';
+                btn.innerHTML = '↳ Intervalles';
+            } else {
+                box.dataset.view = 'intervals';
+                btn.innerHTML = '↳ Portée';
+            }
+            renderGenerator(box);
+        }
+
+        function addGenerator(scaleKey = 'major', tonicVal = 'c', transpVal = '-2') {
+            const container = document.getElementById('container');
+            const box = document.createElement('div');
+            box.className = 'generator-box';
+            box.dataset.view = 'stave';
+            box.dataset.direction = 'asc';
+
+            box.oncontextmenu = (e) => {
+                e.preventDefault();
+                box.dataset.direction = box.dataset.direction === 'desc' ? 'asc' : 'desc';
+                renderGenerator(box);
+            };
+
+            box.innerHTML = `
+                <button onclick="this.closest('.generator-box').remove(); stopCurrentPlayback();" style="position: absolute; top: 3px; right: 4px; background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; padding: 2px 6px; font-weight: bold; line-height: 1;">&times;</button>
+                <div class="header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 5px; width: 100%; box-sizing: border-box; white-space: nowrap;">
+                    <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                        <select class="tonic-select">
+                            <option value="c">Do (C)</option><option value="c#">Do# (C#)</option><option value="db">Ré♭ (Db)</option>
+                            <option value="d">Ré (D)</option><option value="d#">Ré# (D#)</option><option value="eb">Mi♭ (Eb)</option>
+                            <option value="e">Mi (E)</option><option value="f">Fa (F)</option><option value="f#">Fa# (F#)</option>
+                            <option value="g">Sol (G)</option><option value="g#">Sol# (G#)</option><option value="ab">La♭ (Ab)</option>
+                            <option value="a">La (A)</option><option value="a#">La# (A#)</option><option value="bb">Si♭ (Bb)</option>
+                            <option value="b">Si (B)</option>
+                        </select>
+                        <select class="scale-select">
+                            <optgroup label="Diatoniques">
+                                <option value="major">Majeure (Ionien)</option>
+                                <option value="dorian">Dorien</option>
+                                <option value="phrygian">Phrygien</option>
+                                <option value="lydian">Lydien</option>
+                                <option value="mixolydian">Mixolydien</option>
+                                <option value="natural_minor">Mineure naturelle (Éolien)</option>
+                                <option value="locrian">Locrien</option>
+                            </optgroup>
+                            <optgroup label="Mineure Mélodique">
+                                <option value="melodic_minor">Mineure mélodique</option>
+                                <option value="dorian_b2">Dorien b2</option>
+                                <option value="lydian_augmented">Lydien augmenté</option>
+                                <option value="lydian_dominant">Lydien dominant</option>
+                                <option value="mixolydian_b6">Mixolydien b6</option>
+                                <option value="locrian_#2">Locrien #2</option>
+                                <option value="altered">Altérée</option>
+                            </optgroup>
+                            <optgroup label="Mineure Harmonique">
+                                <option value="harmonic_minor">Mineure harmonique</option>
+                                <option value="locrian_6">Locrien 6</option>
+                                <option value="ionian_#5">Ionien augmenté</option>
+                                <option value="dorian_#4">Dorien #4</option>
+                                <option value="phryg_dom">Phrygien dominant</option>
+                                <option value="lydian_#2">Lydien #2</option>
+                                <option value="super_locrien_bb7">Ultra locrien</option>
+                            </optgroup>
+                            <optgroup label="Pentatoniques & Blues">
+                                <option value="pentatonic_major">Pentatonique majeure</option>
+                                <option value="pentatonic_minor">Pentatonique mineure</option>
+                                <option value="blues_minor">Blues mineure</option>
+                                <option value="blues_major">Blues majeure</option>
+                            </optgroup>
+                            <optgroup label="Symétriques & Autres">
+                                <option value="whole_tone">Par tons</option>
+                                <option value="diminished_hw">Diminuée (1-2)</option>
+                                <option value="diminished_wh">Diminuée (2-1)</option>
+                                <option value="augmented">Augmentée</option>
+                                <option value="double_harmonic">Double harmonique</option>
+                            </optgroup>
+                            <optgroup label="Les Maqâmat">
+                                <option value="maqam_rast">Maqâm Rast</option>
+                                <option value="maqam_bayati">Maqâm Bayati</option>
+                                <option value="maqam_hijaz">Maqâm Hijaz</option>
+                                <option value="maqam_nahawand">Maqâm Nahawand</option>
+                                <option value="maqam_kurd">Maqâm Kurd</option>
+                            </optgroup>
+                            <optgroup label="Les Râgas">
+                                <option value="raga_bilawal">Râga Bilawal</option>
+                                <option value="raga_kalyan">Râga Kalyan</option>
+                                <option value="raga_bhairav">Râga Bhairav</option>
+                                <option value="raga_todi">Râga Todi</option>
+                                <option value="raga_asavari">Râga Asavari</option>
+                            </optgroup>
+                            <optgroup label="Les Dastgāhs">
+                                <option value="dastgah_shur">Dastgâh Shur</option>
+                                <option value="dastgah_mahur">Dastgâh Mâhur</option>
+                                <option value="dastgah_homayoun">Dastgâh Homayoun</option>
+                                <option value="dastgah_chahargah">Dastgâh Chahârgâh</option>
+                            </optgroup>
+                            <optgroup label="Les Gamelans">
+                                <option value="gamelan_slendro">Gamelan Slendro</option>
+                                <option value="gamelan_pelog">Gamelan Pelog</option>
+                            </optgroup>
+                        </select>
+                        <label>Transposition :</label>
+                        <select class="transposition-select">
+                            <option value="0">Ut (C)</option>
+                            <option value="-2">Sib (Bb)</option>
+                            <option value="-9">Mib (Eb)</option>
+                        </select>
+                        <button class="view-toggle-btn" onclick="toggleView(this)" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">↳ Intervalles</button>
+                    </div>
+                </div>
+                <div class="output"></div>
+            `;
+
+            container.appendChild(box);
+
+            const tonicSel = box.querySelector('.tonic-select');
+            const scaleSel = box.querySelector('.scale-select');
+            const transpSel = box.querySelector('.transposition-select');
+
+            tonicSel.value = tonicVal;
+            scaleSel.value = scaleKey;
+            transpSel.value = transpVal;
+
+            const update = () => renderGenerator(box);
+            tonicSel.onchange = update;
+            scaleSel.onchange = update;
+            transpSel.onchange = update;
+
+            initAudio(update);
+        }
+
+        function generateAllModes() {
+            stopCurrentPlayback();
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            Object.keys(scaleIntervals).forEach(scaleKey => {
+                addGenerator(scaleKey, 'c', '-2');
+            });
+        }
+
+        function resetGenerators() {
+            stopCurrentPlayback();
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            addGenerator('major', 'c', '-2');
+        }
+
+        function renderGenerator(box) {
+            const tonicVal = box.querySelector('.tonic-select').value;
+            const scaleKey = box.querySelector('.scale-select').value;
+            const transposition = parseInt(box.querySelector('.transposition-select').value);
+            const isDesc = box.dataset.direction === 'desc';
+
+            let intervals = scaleIntervals[scaleKey] || scaleIntervals.major;
+            if (scaleKey === 'melodic_minor' && isDesc) {
+                intervals = scaleIntervals['natural_minor'];
+            }
+
+            let contentWidth = Math.max(600, intervals.length * 60 + 50);
+
+            const headerRow = box.querySelector('.header-row');
+            if (headerRow) {
+                const headerWidth = headerRow.scrollWidth;
+                if (headerWidth > contentWidth) {
+                    contentWidth = headerWidth;
+                }
+            }
+
+            if (window.innerWidth > 768) {
+                box.style.width = (contentWidth + 30) + 'px';
+            } else {
+                box.style.width = '100%';
+            }
+
+            const outputDiv = box.querySelector('.output');
+            outputDiv.innerHTML = '';
+            outputDiv.style.width = window.innerWidth <= 768 ? '100%' : contentWidth + 'px';
+
+            const tonicObj = tonicData[tonicVal] || tonicData['c'];
+            const baseOctave = 4;
+            let items = [];
+
+            intervals.forEach((interval, index) => {
+                let totalVal = tonicObj.semitone + interval;
+                
+                let audioMidi = 60 + totalVal - 12 + transposition;
+
+                let degreeIndex = index;
+                if (scaleKey === 'pentatonic_major' && scaleDegreeMappings.pentatonic_major[index] !== undefined) {
+                    degreeIndex = scaleDegreeMappings.pentatonic_major[index];
+                } else if (scaleKey === 'pentatonic_minor' && scaleDegreeMappings.pentatonic_minor[index] !== undefined) {
+                    degreeIndex = scaleDegreeMappings.pentatonic_minor[index];
+                } else if (scaleKey === 'blues_minor') {
+                    const bluesMinorMap = [0, 2, 3, 3, 4, 6, 7];
+                    degreeIndex = bluesMinorMap[index] !== undefined ? bluesMinorMap[index] : index;
+                } else if (scaleKey === 'blues_major') {
+                    const bluesMajorMap = [0, 1, 2, 2, 4, 5, 7];
+                    degreeIndex = bluesMajorMap[index] !== undefined ? bluesMajorMap[index] : index;
+                }
+
+                let key = '';
+                let noteAccidental = '';
+
+                if (['whole_tone', 'diminished_hw', 'diminished_wh', 'augmented'].includes(scaleKey)) {
+                    let useFlats = ['f', 'bb', 'eb', 'ab', 'db', 'gb', 'cb'].includes(tonicVal) || tonicVal.includes('b');
+                    let noteIndex = totalVal % 12;
+                    let sharpNames = ['c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b'];
+                    let flatNames = ['c', 'db', 'd', 'eb', 'e', 'f', 'gb', 'g', 'ab', 'a', 'bb', 'b'];
+                    let name = useFlats ? flatNames[noteIndex] : sharpNames[noteIndex];
+                    let octave = baseOctave + Math.floor(totalVal / 12);
+                    key = `${name}/${octave}`;
+                    if (name.includes('#')) noteAccidental = '#';
+                    else if (name.includes('bb')) noteAccidental = 'bb';
+                    else if (name.includes('b') && name !== 'b') noteAccidental = 'b';
+                } else {
+                    let tIdx = tonicObj.letterIdx + degreeIndex;
+                    let letterIdx = tIdx % 7;
+                    let letter = letters[letterIdx];
+
+                    let midi = 60 + totalVal;
+                    let bestOctave = 4;
+                    let minDiff = 999;
+                    for (let o = 3; o <= 6; o++) {
+                        let m = 60 + naturalSemitones[letter] + (o - 4) * 12;
+                        let diff = Math.abs(m - midi);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            bestOctave = o;
+                        }
+                    }
+                    let naturalMidi = 60 + naturalSemitones[letter] + (bestOctave - 4) * 12;
+                    let diffSemi = midi - naturalMidi;
+
+                    if (scaleKey === 'blues_minor' && index === 3) {
+                        let useFlats = ['f', 'bb', 'eb', 'ab', 'db', 'gb'].includes(tonicVal) || tonicVal.includes('b');
+                        diffSemi = useFlats ? -1 : 1;
+                    }
+
+                    if (diffSemi === 1) noteAccidental = '#';
+                    else if (diffSemi === 2) noteAccidental = '##';
+                    else if (diffSemi === -1) noteAccidental = 'b';
+                    else if (diffSemi === -2) noteAccidental = 'bb';
+
+                    key = `${letter.toLowerCase()}${noteAccidental}/${bestOctave}`;
+                }
+
+                let intervalName = semitoneToIntervalName[interval] || interval;
+                items.push({ interval, midi: audioMidi, key, accidental: noteAccidental, name: intervalName });
+            });
+
+            if (isDesc) {
+                items.reverse();
+            }
+
+            let scaleMidiNotes = items.map(item => item.midi);
+
+            if (box.dataset.view === 'intervals') {
+                items.forEach((item, index) => {
+                    if (item.interval === 12 && !isDesc) return;
+                    let span = document.createElement('span');
+                    span.className = 'interval-item';
+                    span.textContent = item.name;
+                    span.dataset.midiIndex = index;
+                    outputDiv.appendChild(span);
+                });
+            } else {
+                const renderer = new Renderer(outputDiv, Renderer.Backends.SVG);
+                renderer.resize(contentWidth - 20, 200);
+                const context = renderer.getContext();
+
+                const stave = new Stave(10, 40, contentWidth - 40);
+                stave.addClef("treble");
+                stave.setContext(context).draw();
+                stave.setNoteStartX(stave.getNoteStartX() + 30);
+
+                const notes = items.map((item) => {
+                    let staveNote = new StaveNote({ clef: "treble", keys: [item.key], duration: "q" });
+                    if (item.accidental === '##') {
+                        staveNote.addModifier(new Accidental("##"), 0);
+                    } else if (item.accidental === '#') {
+                        staveNote.addModifier(new Accidental("#"), 0);
+                    } else if (item.accidental === 'bb') {
+                        staveNote.addModifier(new Accidental("bb"), 0);
+                    } else if (item.accidental === 'b') {
+                        staveNote.addModifier(new Accidental("b"), 0);
+                    }
+                    return staveNote;
+                });
+
+                const voice = new Voice({ num_beats: notes.length, beat_value: 4 });
+                voice.addTickables(notes);
+
+                const formatter = new Formatter().joinVoices([voice]);
+                formatter.format([voice], contentWidth - 110);
+                voice.draw(context, stave);
+            }
+
+            if (!box.activeTimeouts) box.activeTimeouts = [];
+
+            outputDiv.onclick = (e) => {
+                e.stopPropagation();
+                let noteEl = e.target.closest('.vf-stavenote') || e.target.closest('.interval-item');
+                let targetEl = noteEl || outputDiv;
+
+                if (currentActiveElement === targetEl) {
+                    stopCurrentPlayback();
+                    return;
+                }
+
+                stopCurrentPlayback();
+                currentActiveElement = targetEl;
+
+                if (noteEl) {
+                    let index;
+                    if (box.dataset.view === 'intervals') {
+                        index = parseInt(noteEl.dataset.midiIndex);
+                    } else {
+                        const allItems = Array.from(outputDiv.querySelectorAll('.vf-stavenote'));
+                        index = allItems.indexOf(noteEl);
+                    }
+
+                    if (!isNaN(index) && scaleMidiNotes[index] !== undefined) {
+                        playMidi(scaleMidiNotes[index], 0.8);
+                        let t = setTimeout(() => {
+                            if (currentActiveElement === targetEl) currentActiveElement = null;
+                        }, 800);
+                        box.activeTimeouts.push(t);
+                    }
+                } else {
+                    scaleMidiNotes.forEach((midi, index) => {
+                        let t = setTimeout(() => {
+                            playMidi(midi, 0.8);
+                        }, index * 400);
+                        box.activeTimeouts.push(t);
+                    });
+                    let totalDuration = scaleMidiNotes.length * 400 + 400;
+                    let tEnd = setTimeout(() => {
+                        if (currentActiveElement === targetEl) currentActiveElement = null;
+                    }, totalDuration);
+                    box.activeTimeouts.push(tEnd);
+                }
+            };
+        }
+
+        window.onload = () => {
+            initAudio(() => {
+                addGenerator('major', 'c', '-2');
+            });
+        };
+    </script>
+</body>
+</html>
