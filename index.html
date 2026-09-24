@@ -3,36 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Mode Machine</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background: #1e1e1e; color: #fff; min-height: 100vh; box-sizing: border-box; }
-        select, input[type="range"] { padding: 8px; margin-right: 10px; background: #333; color: #fff; border: 1px solid #555; vertical-align: middle; }
-        label { margin-right: 5px; font-size: 14px; }
-        #container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
-        .generator-box { background: #2a2a2a; padding: 15px; border-radius: 6px; border: 1px solid #444; position: relative; padding-top: 25px; box-sizing: border-box; }
-        .output { margin-top: 15px; background: #fff; color: #333; display: block; padding: 10px; border-radius: 4px; cursor: pointer; box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 200px; overflow: hidden; }
-        .vf-stavenote { cursor: pointer; }
-        .vf-stavenote:hover path { fill: #007acc; stroke: #007acc; }
-        .interval-item { display: inline-block; padding: 10px 15px; margin: 5px; background: #f0f0f0; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 18px; text-align: center; }
-        .interval-item:hover { background: #007acc; color: #fff; border-color: #005999; }
-        
-        @media (max-width: 768px) {
-            body { margin: 10px; }
-            .global-controls { gap: 10px; }
-            .generator-box { width: 100% !important; max-width: 100% !important; padding: 10px; padding-top: 25px; }
-            .header-row > div { flex-wrap: wrap !important; white-space: normal !important; gap: 8px; }
-            .output { width: 100% !important; overflow-x: auto; justify-content: flex-start; }
-        }
-
-        @media print {
-            body { background: #fff; color: #000; }
-            .global-controls { display: none !important; }
-            .generator-box { border: none; background: #fff; color: #000; page-break-inside: avoid; }
-            .generator-box button { display: none !important; }
-            .output { background: #fff !important; color: #000 !important; border: 1px solid #ccc; }
-        }
-    </style>
 </head>
 <body ondblclick="handleBodyClick(event)">
     <div class="global-controls" style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
@@ -80,6 +53,8 @@
             persian: [0, 1, 4, 5, 6, 8, 11, 12],
             byzantine: [0, 1, 4, 5, 7, 8, 11, 12],
             chinese: [0, 4, 6, 7, 11, 12],
+            chinese_pentatonic: [0, 2, 4, 7, 9, 12],
+            chinese_lü_lü: [0, 2, 4, 5, 7, 9, 11, 12],
             pentatonic_major: [0, 2, 4, 7, 9, 12],
             pentatonic_minor: [0, 3, 5, 7, 10, 12],
             blues_minor: [0, 3, 5, 6, 7, 10, 12],
@@ -94,7 +69,7 @@
             augmented: [0, 3, 4, 7, 8, 11, 12],
             double_harmonic: [0, 1, 4, 5, 7, 8, 11, 12],
             maqam_rast: [0, 2, 3, 5, 7, 9, 10, 12],
-            maqam_bayati: [0, 1, 3, 5, 7, 8, 10, 12],
+            maqam_bayati: [0, 2, 3, 5, 7, 8, 10, 12],
             maqam_hijaz: [0, 1, 4, 5, 7, 8, 10, 12],
             maqam_nahawand: [0, 2, 3, 5, 7, 8, 10, 12],
             maqam_kurd: [0, 1, 3, 5, 7, 8, 10, 12],
@@ -103,17 +78,26 @@
             raga_bhairav: [0, 1, 4, 5, 7, 8, 11, 12],
             raga_todi: [0, 1, 3, 6, 7, 8, 11, 12],
             raga_asavari: [0, 2, 3, 5, 7, 8, 10, 12],
+            raga_yaman: [0, 2, 4, 6, 7, 9, 11, 12],
+            raga_Bhairavi: [0, 1, 3, 5, 7, 8, 10, 12],
+            raga_shankarabharana: [0, 2, 4, 5, 7, 9, 11, 12],
+            raga_kharaharapriya: [0, 2, 3, 5, 7, 9, 10, 12],
+            raga_hanumatodi: [0, 1, 3, 5, 7, 8, 10, 12],
+            raga_mayamalavagowula: [0, 1, 4, 5, 7, 8, 11, 12],
+            raga_kanakangi: [0, 1, 2, 5, 7, 8, 9, 12],
+            raga_ratnangi: [0, 1, 3, 5, 7, 8, 10, 12],
+            raga_ganamurti: [0, 1, 2, 5, 7, 8, 10, 12],
+            raga_vanaspati: [0, 1, 3, 5, 7, 8, 11, 12],
+            raga_manavati: [0, 1, 4, 5, 7, 8, 9, 12],
+            raga_tanarupi: [0, 1, 2, 5, 7, 8, 11, 12],
             dastgah_shur: [0, 1, 3, 5, 7, 8, 10, 12],
             dastgah_mahur: [0, 2, 4, 5, 7, 9, 11, 12],
             dastgah_homayoun: [0, 1, 4, 5, 7, 8, 10, 12],
             dastgah_chahargah: [0, 1, 4, 5, 7, 8, 11, 12],
             gamelan_slendro: [0, 2, 5, 7, 10, 12],
-            gamelan_pelog: [0, 1, 3, 7, 8, 12]
-        };
-
-        const semitoneToIntervalName = {
-            0: "1", 1: "b2", 2: "2", 3: "b3", 4: "3", 5: "4",
-            6: "#4", 7: "5", 8: "b6", 9: "6", 10: "b7", 11: "7", 12: "1"
+            gamelan_pelog: [0, 1, 3, 7, 8, 12],
+            gamelan_degung: [0, 2, 3, 7, 9, 12],
+            gamelan_madra: [0, 2, 5, 8, 10, 12]
         };
 
         const tonicData = {
@@ -142,12 +126,17 @@
         const scaleDegreeMappings = {
             pentatonic_major: [0, 1, 2, 4, 5, 7],
             pentatonic_minor: [0, 2, 3, 4, 6, 7],
-            blues_minor: [0, 2, 3, 3, 4, 6, 7],
-            blues_major: [0, 1, 2, 2, 4, 5, 7],
+            blues_minor: [0, 2, 3, 4, 5, 6, 7],
+            blues_major: [0, 1, 2, 3, 4, 5, 7],
             hirajoshi: [0, 1, 2, 4, 5, 7],
             insen: [0, 1, 4, 5, 6, 7],
             iwato: [0, 1, 4, 5, 6, 7],
-            yo: [0, 1, 3, 4, 5, 7]
+            yo: [0, 1, 3, 4, 5, 7],
+            chinese_pentatonic: [0, 1, 2, 4, 5, 7],
+            gamelan_slendro: [0, 1, 3, 4, 6, 7],
+            gamelan_pelog: [0, 1, 2, 4, 5, 7],
+            gamelan_degung: [0, 1, 2, 4, 5, 7],
+            gamelan_madra: [0, 1, 3, 5, 6, 7]
         };
 
         let pianoInstrument = null;
@@ -286,8 +275,10 @@
                                 <option value="enigmatic">Énigmatique</option>
                                 <option value="prometheus">Prométhée</option>
                                 <option value="persian">Persane</option>
-                                <option value="byzantine">Byzantine</option>
+                                <option value="byzantine">Byzantine / Double harmonique</option>
                                 <option value="chinese">Chinoise</option>
+                                <option value="chinese_pentatonic">Chinoise pentatonique</option>
+                                <option value="chinese_lü_lü">Chinoise Lü-Lü</option>
                             </optgroup>
                             <optgroup label="Pentatoniques & Blues">
                                 <option value="pentatonic_major">Pentatonique majeure</option>
@@ -304,14 +295,13 @@
                                 <option value="diminished_hw">Diminuée (1-2)</option>
                                 <option value="diminished_wh">Diminuée (2-1)</option>
                                 <option value="augmented">Augmentée</option>
-                                <option value="double_harmonic">Double harmonique</option>
                             </optgroup>
                             <optgroup label="Les Maqâmat">
-                                <option value="maqam_rast">Maqâm Rast</option>
-                                <option value="maqam_bayati">Maqâm Bayati</option>
-                                <option value="maqam_hijaz">Maqâm Hijaz</option>
-                                <option value="maqam_nahawand">Maqâm Nahawand</option>
-                                <option value="maqam_kurd">Maqâm Kurd</option>
+                                <option value="maqam_rast">Maqâm Rast / Majeure</option>
+                                <option value="maqam_bayati">Maqâm Bayati / Dastgâh Shur</option>
+                                <option value="maqam_hijaz">Maqâm Hijaz / Dastgâh Homayoun</option>
+                                <option value="maqam_nahawand">Maqâm Nahawand / Mineure naturelle</option>
+                                <option value="maqam_kurd">Maqâm Kurd / Phrygien</option>
                             </optgroup>
                             <optgroup label="Gammes indiennes">
                                 <option value="raga_bilawal">Râga Bilawal</option>
@@ -319,6 +309,20 @@
                                 <option value="raga_bhairav">Râga Bhairav</option>
                                 <option value="raga_todi">Râga Todi</option>
                                 <option value="raga_asavari">Râga Asavari</option>
+                                <option value="raga_yaman">Râga Yaman</option>
+                                <option value="raga_Bhairavi">Râga Bhairavi</option>
+                                <option value="raga_shankarabharana">Râga Shankarabharana</option>
+                                <option value="raga_kharaharapriya">Râga Kharaharapriya</option>
+                                <option value="raga_hanumatodi">Râga Hanumatodi</option>
+                                <option value="raga_mayamalavagowula">Râga Mayamalavagowula</option>
+                                <optgroup label="↳ Thātas carnatiques">
+                                    <option value="raga_kanakangi">1. Kanakangi</option>
+                                    <option value="raga_ratnangi">2. Ratnangi</option>
+                                    <option value="raga_ganamurti">3. Ganamurti</option>
+                                    <option value="raga_vanaspati">4. Vanaspati</option>
+                                    <option value="raga_manavati">5. Manavati</option>
+                                    <option value="raga_tanarupi">6. Tanarupi</option>
+                                </optgroup>
                             </optgroup>
                             <optgroup label="Les Dastgāhs">
                                 <option value="dastgah_shur">Dastgâh Shur</option>
@@ -329,6 +333,8 @@
                             <optgroup label="Les Gamelans">
                                 <option value="gamelan_slendro">Gamelan Slendro</option>
                                 <option value="gamelan_pelog">Gamelan Pelog</option>
+                                <option value="gamelan_degung">Gamelan Degung</option>
+                                <option value="gamelan_madra">Gamelan Madra</option>
                             </optgroup>
                         </select>
                         <label>Transposition :</label>
@@ -388,25 +394,10 @@
                 intervals = scaleIntervals['natural_minor'];
             }
 
-            let contentWidth = Math.max(600, intervals.length * 60 + 50);
-
-            const headerRow = box.querySelector('.header-row');
-            if (headerRow) {
-                const headerWidth = headerRow.scrollWidth;
-                if (headerWidth > contentWidth) {
-                    contentWidth = headerWidth;
-                }
-            }
-
-            if (window.innerWidth > 768) {
-                box.style.width = (contentWidth + 30) + 'px';
-            } else {
-                box.style.width = '100%';
-            }
+            let contentWidth = Math.max(500, intervals.length * 50 + 50);
 
             const outputDiv = box.querySelector('.output');
             outputDiv.innerHTML = '';
-            outputDiv.style.width = window.innerWidth <= 768 ? '100%' : contentWidth + 'px';
 
             const tonicObj = tonicData[tonicVal] || tonicData['c'];
             const baseOctave = 4;
@@ -422,12 +413,6 @@
                     degreeIndex = scaleDegreeMappings.pentatonic_major[index];
                 } else if (scaleKey === 'pentatonic_minor' && scaleDegreeMappings.pentatonic_minor[index] !== undefined) {
                     degreeIndex = scaleDegreeMappings.pentatonic_minor[index];
-                } else if (scaleKey === 'blues_minor') {
-                    const bluesMinorMap = [0, 2, 3, 3, 4, 6, 7];
-                    degreeIndex = bluesMinorMap[index] !== undefined ? bluesMinorMap[index] : index;
-                } else if (scaleKey === 'blues_major') {
-                    const bluesMajorMap = [0, 1, 2, 2, 4, 5, 7];
-                    degreeIndex = bluesMajorMap[index] !== undefined ? bluesMajorMap[index] : index;
                 } else if (scaleDegreeMappings[scaleKey] && scaleDegreeMappings[scaleKey][index] !== undefined) {
                     degreeIndex = scaleDegreeMappings[scaleKey][index];
                 }
@@ -478,7 +463,22 @@
                     key = `${letter.toLowerCase()}${noteAccidental}/${bestOctave}`;
                 }
 
-                let intervalName = semitoneToIntervalName[interval] || interval;
+                let intervalName;
+                if (interval === 12) {
+                    intervalName = "1";
+                } else {
+                    const majorSemitones = [0, 2, 4, 5, 7, 9, 11];
+                    let baseDegree = (degreeIndex % 7) + 1;
+                    let expectedSemi = majorSemitones[degreeIndex % 7];
+                    let diff = (interval % 12) - expectedSemi;
+                    let acc = "";
+                    if (diff === 1) acc = "#";
+                    else if (diff === 2) acc = "##";
+                    else if (diff === -1) acc = "b";
+                    else if (diff === -2) acc = "bb";
+                    intervalName = `${acc}${baseDegree}`;
+                }
+
                 items.push({ interval, midi: audioMidi, key, accidental: noteAccidental, name: intervalName });
             });
 
