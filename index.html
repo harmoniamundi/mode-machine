@@ -174,10 +174,41 @@
             }
         }
 
+        let audioUnlocked = false;
+
+        // Sur iOS/Android, l'audio ne peut démarrer que depuis un geste de l'utilisateur
+        // (touchend / click), et pas depuis un setTimeout : on le déverrouille ici.
+        function unlockAudio() {
+            if (!audioCtx) return;
+            if (audioCtx.state !== 'running') {
+                audioCtx.resume().catch(() => {});
+            }
+            if (!audioUnlocked) {
+                try {
+                    const buffer = audioCtx.createBuffer(1, 1, 22050);
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = buffer;
+                    src.connect(audioCtx.destination);
+                    src.start(0);
+                    audioUnlocked = true;
+                } catch (err) {
+                    console.error("Déverrouillage audio impossible", err);
+                }
+            }
+        }
+
+        ['touchend', 'click', 'keydown'].forEach(evt => {
+            document.addEventListener(evt, unlockAudio, { passive: true });
+        });
+
         function playMidi(midi, duration = 0.8) {
-            if (!pianoInstrument) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            pianoInstrument.play(midi, audioCtx.currentTime, { duration: duration });
+            if (!pianoInstrument || !audioCtx) return;
+            const start = () => pianoInstrument.play(midi, audioCtx.currentTime, { duration: duration });
+            if (audioCtx.state !== 'running') {
+                audioCtx.resume().then(start).catch(start);
+            } else {
+                start();
+            }
         }
 
         function stopAllAudio() {
@@ -235,7 +266,7 @@
             box.ondblclick = (e) => {
                 e.stopPropagation();
                 // Ne pas inverser quand on double-clique sur un contrôle (menus, boutons)
-                if (e.target.closest('select, button, input, label, option')) return;
+                if (e.target.closest('select, button, input, label, option, .transp-icon')) return;
                 if (window.getSelection) window.getSelection().removeAllRanges();
                 toggleDirection(box);
             };
@@ -350,7 +381,7 @@
                                 <option value="gamelan_madra">Gamelan Madra</option>
                             </optgroup>
                         </select>
-                        <label>Transposition :</label>
+                        <span class="transp-icon" title="Transposition" role="img" aria-label="Transposition"><svg viewBox="0 0 32 22" width="28" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 7.5v5M1.5 10H4"/><path d="M4 8.5h18M4 11.5h18M4 8.5v3"/><path d="M22 8.5 30 3.5v14L22 11.5"/><path d="M11 8.5V4M9.8 3.5h2.4M15 8.5V4M13.8 3.5h2.4M19 8.5V4M17.8 3.5h2.4"/><path d="M9 11.5v3.5a2.5 2.5 0 0 0 2.5 2.5h6a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>
                         <select class="transposition-select">
                             <option value="0">Ut (C)</option>
                             <option value="-2">Sib (Bb)</option>
@@ -549,6 +580,7 @@
 
             outputDiv.onclick = (e) => {
                 e.stopPropagation();
+                unlockAudio();
                 let noteEl = e.target.closest('.vf-stavenote') || e.target.closest('.interval-item');
                 let targetEl = noteEl || outputDiv;
 
