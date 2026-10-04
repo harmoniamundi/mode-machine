@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mode Machine</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
@@ -214,6 +215,11 @@
             renderGenerator(box);
         }
 
+        function toggleDirection(box) {
+            box.dataset.direction = box.dataset.direction === 'desc' ? 'asc' : 'desc';
+            renderGenerator(box);
+        }
+
         function addGenerator(scaleKey = 'major', tonicVal = 'c', transpVal = '-2') {
             const container = document.getElementById('container');
             const box = document.createElement('div');
@@ -223,8 +229,15 @@
 
             box.oncontextmenu = (e) => {
                 e.preventDefault();
-                box.dataset.direction = box.dataset.direction === 'desc' ? 'asc' : 'desc';
-                renderGenerator(box);
+                toggleDirection(box);
+            };
+
+            box.ondblclick = (e) => {
+                e.stopPropagation();
+                // Ne pas inverser quand on double-clique sur un contrôle (menus, boutons)
+                if (e.target.closest('select, button, input, label, option')) return;
+                if (window.getSelection) window.getSelection().removeAllRanges();
+                toggleDirection(box);
             };
 
             box.innerHTML = `
@@ -527,6 +540,9 @@
                 const formatter = new Formatter().joinVoices([voice]);
                 formatter.format([voice], contentWidth - 110);
                 voice.draw(context, stave);
+
+                const svgEl = outputDiv.querySelector('svg');
+                if (svgEl) svgEl.setAttribute('viewBox', `0 0 ${contentWidth - 20} 200`);
             }
 
             if (!box.activeTimeouts) box.activeTimeouts = [];
