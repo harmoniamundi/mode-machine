@@ -277,13 +277,15 @@
             const now = Date.now();
             if (now - lastTapTime < 350 && Math.hypot(t.clientX - lastTapX, t.clientY - lastTapY) < 40) {
                 lastTapTime = 0;
+                // Empêche Safari (iPhone) de zoomer sur le double-tap
+                if (e.cancelable) e.preventDefault();
                 requestNewGenerator(e);
             } else {
                 lastTapTime = now;
                 lastTapX = t.clientX;
                 lastTapY = t.clientY;
             }
-        }, { passive: true });
+        }, { passive: false });
 
         function toggleView(btn) {
             const box = btn.closest('.generator-box');
