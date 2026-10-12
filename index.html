@@ -4,21 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mode Machine</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#282828">
+    <link rel="icon" type="image/png" href="app/icon-192.png">
+    <link rel="manifest" href="app/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="app/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Modes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="stylesheet" href="app/style.css">
     <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
 </head>
 <body ondblclick="handleBodyClick(event)">
-    <div class="global-controls" style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-        <div>
-            <label for="volume">Volume :</label>
-            <input type="range" id="volume" min="0" max="15" step="0.5" value="8.0" oninput="updateVolume(this.value)">
+    <header class="app-header">
+        <span class="app-title">Mode Machine</span>
+    </header>
+
+    <main class="app-main">
+    <div class="controls">
+        <div class="controls-row">
+            <div class="field">
+                <label class="field-label" for="volume">Volume</label>
+                <input type="range" id="volume" min="0" max="15" step="0.5" value="8.0" oninput="updateVolume(this.value)">
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-slate" onclick="generateAllModes()" title="Affiche une gamme pour chacun des modes">Générer tous les modes</button>
+                <button type="button" class="btn btn-danger" onclick="resetGenerators()" title="Efface tout et repart d'une seule gamme">Réinitialiser</button>
+                <button type="button" class="btn-ghost" onclick="window.print()" title="Imprimer" aria-label="Imprimer"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.32 0h1.005c1.045 0 1.897-.816 1.995-1.855a49.663 49.663 0 00-.128-6.078c-.075-.923-.826-1.635-1.751-1.752a48.925 48.925 0 00-15.702 0c-.925.117-1.676.83-1.751 1.752a49.665 49.665 0 00-.128 6.078c.098 1.039.95 1.855 1.995 1.855H5.34"/></svg></button>
+            </div>
         </div>
-        <button onclick="generateAllModes()" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">Générer tous les modes</button>
-        <button onclick="resetGenerators()" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">Réinitialiser</button>
-        <button onclick="window.print()" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">Imprimer</button>
     </div>
     <div id="container"></div>
+    </main>
 
     <script>
         const { Stave, StaveNote, Voice, Formatter, Renderer, Accidental } = Vex.Flow;
@@ -233,11 +251,12 @@
                     b.activeTimeouts = [];
                 }
             });
+            document.querySelectorAll('.output.playing').forEach(o => o.classList.remove('playing'));
             currentActiveElement = null;
         }
 
         function isNewDominoZone(target) {
-            return !!target && !!target.closest && !target.closest('.generator-box') && !target.closest('.global-controls');
+            return !!target && !!target.closest && !target.closest('.generator-box') && !target.closest('.controls') && !target.closest('.app-header');
         }
 
         let lastNewDominoTime = 0;
@@ -287,14 +306,23 @@
             }
         }, { passive: false });
 
-        function toggleView(btn) {
+        // Boutons segmentés d'une gamme (Instrument, Affichage) : un seul bouton actif par groupe
+        function setActiveSegment(group, value) {
+            group.querySelectorAll('.seg-btn').forEach(b => {
+                const actif = (b.dataset.value === value);
+                b.classList.toggle('is-active', actif);
+                b.setAttribute('aria-pressed', String(actif));
+            });
+        }
+
+        function choisirSegment(btn) {
             const box = btn.closest('.generator-box');
-            if (box.dataset.view === 'intervals') {
-                box.dataset.view = 'stave';
-                btn.innerHTML = '↳ Intervalles';
-            } else {
-                box.dataset.view = 'intervals';
-                btn.innerHTML = '↳ Portée';
+            const group = btn.closest('.segmented');
+            setActiveSegment(group, btn.dataset.value);
+            if (group.dataset.seg === 'transposition') {
+                box.querySelector('.transposition-select').value = btn.dataset.value;
+            } else if (group.dataset.seg === 'view') {
+                box.dataset.view = btn.dataset.value;
             }
             renderGenerator(box);
         }
@@ -333,10 +361,9 @@
             };
 
             box.innerHTML = `
-                <button onclick="this.closest('.generator-box').remove(); stopCurrentPlayback();" style="position: absolute; top: 3px; right: 4px; background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; padding: 2px 6px; font-weight: bold; line-height: 1;">&times;</button>
-                <div class="header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 5px; width: 100%; box-sizing: border-box; white-space: nowrap;">
-                    <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
-                        <select class="tonic-select">
+                <button type="button" class="modal-close" onclick="this.closest('.generator-box').remove(); stopCurrentPlayback();" title="Supprimer cette gamme" aria-label="Supprimer cette gamme"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                <div class="box-controls">
+                        <select class="tonic-select" title="Tonique" aria-label="Tonique">
                             <option value="c">Do</option><option value="c#">Do#</option><option value="db">Ré♭</option>
                             <option value="d">Ré</option><option value="d#">Ré#</option><option value="eb">Mi♭</option>
                             <option value="e">Mi</option><option value="f">Fa</option><option value="f#">Fa#</option>
@@ -344,7 +371,7 @@
                             <option value="a">La</option><option value="a#">La#</option><option value="bb">Si♭</option>
                             <option value="b">Si</option>
                         </select>
-                        <select class="scale-select">
+                        <select class="scale-select select-style" title="Gamme / mode" aria-label="Gamme / mode">
                             <optgroup label="Diatoniques">
                                 <option value="major">Majeure (Ionien)</option>
                                 <option value="dorian">Dorien</option>
@@ -443,14 +470,17 @@
                             </optgroup>
                         </select>
                         <span class="transp-icon" title="Transposition" role="img" aria-label="Transposition"><svg viewBox="0 0 32 22" width="28" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 7.5v5M1.5 10H4"/><path d="M4 8.5h18M4 11.5h18M4 8.5v3"/><path d="M22 8.5 30 3.5v14L22 11.5"/><path d="M11 8.5V4M9.8 3.5h2.4M15 8.5V4M13.8 3.5h2.4M19 8.5V4M17.8 3.5h2.4"/><path d="M9 11.5v3.5a2.5 2.5 0 0 0 2.5 2.5h6a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>
-                        <select class="transposition-select">
-                            <option value="0">Ut</option>
-                            <option value="-2">Sib</option>
-                            <option value="-9">Mib</option>
-                        </select>
-                        <button class="view-toggle-btn" onclick="toggleView(this)" style="padding: 8px 12px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; border-radius: 4px;">↳ Intervalles</button>
-                        <button class="direction-btn" onclick="toggleDirection(this.closest('.generator-box'))"></button>
-                    </div>
+                        <div class="segmented seg-instrument" data-seg="transposition" role="group" aria-label="Instrument">
+                            <button type="button" class="seg-btn" data-value="-2" aria-pressed="false" onclick="choisirSegment(this)">Bb</button>
+                            <button type="button" class="seg-btn" data-value="0" aria-pressed="false" onclick="choisirSegment(this)">Ut</button>
+                            <button type="button" class="seg-btn" data-value="-9" aria-pressed="false" onclick="choisirSegment(this)">Eb</button>
+                        </div>
+                        <input type="hidden" class="transposition-select" value="-2">
+                        <div class="segmented seg-view" data-seg="view" role="group" aria-label="Affichage">
+                            <button type="button" class="seg-btn is-active" data-value="stave" aria-pressed="true" onclick="choisirSegment(this)">Portée</button>
+                            <button type="button" class="seg-btn" data-value="intervals" aria-pressed="false" onclick="choisirSegment(this)">Intervalles</button>
+                        </div>
+                        <button type="button" class="btn-icon direction-btn" onclick="toggleDirection(this.closest('.generator-box'))"></button>
                 </div>
                 <div class="output"></div>
             `;
@@ -465,12 +495,15 @@
 
             tonicSel.value = tonicVal;
             scaleSel.value = scaleKey;
-            transpSel.value = transpVal;
+            transpSel.value = String(transpVal);
+            setActiveSegment(box.querySelector('[data-seg="transposition"]'), String(transpVal));
 
+            // Le menu des gammes peut être tronqué quand la place manque : l'infobulle donne le nom complet
+            const majTitreGamme = () => { const o = scaleSel.options[scaleSel.selectedIndex]; scaleSel.title = o ? o.text : 'Gamme / mode'; };
+            majTitreGamme();
             const update = () => renderGenerator(box);
             tonicSel.onchange = update;
-            scaleSel.onchange = update;
-            transpSel.onchange = update;
+            scaleSel.onchange = () => { majTitreGamme(); update(); };
 
             initAudio(update);
         }
@@ -651,6 +684,7 @@
                         box.activeTimeouts.push(t);
                     }
                 } else {
+                    outputDiv.classList.add('playing');
                     scaleMidiNotes.forEach((midi, index) => {
                         let t = setTimeout(() => {
                             playMidi(midi, 0.8);
@@ -659,6 +693,7 @@
                     });
                     let totalDuration = scaleMidiNotes.length * 400 + 400;
                     let tEnd = setTimeout(() => {
+                        outputDiv.classList.remove('playing');
                         if (currentActiveElement === targetEl) currentActiveElement = null;
                     }, totalDuration);
                     box.activeTimeouts.push(tEnd);
@@ -671,6 +706,16 @@
                 addGenerator('major', 'c', '-2');
             });
         };
+    </script>
+
+    <script>
+        // Mode hors ligne : le service worker (sw.js) met l'application, VexFlow et les sons de piano en cache
+        // après la première visite en ligne. Il ne fonctionne qu'en https ou sur localhost (pas en ouvrant le fichier directement).
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker indisponible :', err.message));
+            });
+        }
     </script>
 </body>
 </html>

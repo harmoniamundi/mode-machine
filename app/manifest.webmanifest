@@ -1,0 +1,17 @@
+{
+  "name": "Mode Machine",
+  "short_name": "Modes",
+  "description": "Mode Machine : gammes et modes affichés en portée ou en intervalles, à écouter et à transposer.",
+  "lang": "fr",
+  "start_url": "../index.html",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1e1e1e",
+  "theme_color": "#282828",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
