@@ -288,13 +288,14 @@ button {
 
     /* Ligne de contrôles : retour à la ligne propre, rien ne déborde */
     .box-controls { flex-wrap: wrap; gap: 8px; }
-    /* Ligne 1 : tonique + trompette + instrument ; ligne 2 : gamme ; ligne 3 : affichage + sens */
+    /* Ligne 1 : tonique + trompette + instrument + sens de la gamme ; ligne 2 : gamme ; ligne 3 : affichage */
     .tonic-select { order: 1; flex: 0 0 auto; }
     .transp-icon { order: 2; }
-    .seg-instrument { order: 3; flex: 1 1 90px; }
-    .scale-select { order: 4; flex: 1 1 100%; max-width: none; min-width: 0; text-overflow: ellipsis; }
-    .seg-view { order: 5; flex: 1 1 auto; }
-    .direction-btn { order: 6; }
+    .seg-instrument { order: 3; flex: 1 1 0; min-width: 0; }
+    .seg-instrument .seg-btn { padding: 8px 4px; } /* resserré pour que la flèche tienne sur la ligne, même sur un petit écran */
+    .direction-btn { order: 4; }
+    .box-controls > .scale-select { order: 5; flex: 1 1 100%; max-width: none; min-width: 0; text-overflow: ellipsis; }
+    .seg-view { order: 6; flex: 1 1 100%; }
 
     /* Zones de toucher confortables */
     select { min-height: 40px; font-size: 16px; }

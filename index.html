@@ -73,7 +73,6 @@
             byzantine: [0, 1, 4, 5, 7, 8, 11, 12],
             chinese: [0, 4, 6, 7, 11, 12],
             chinese_pentatonic: [0, 2, 4, 7, 9, 12],
-            chinese_lü_lü: [0, 2, 4, 5, 7, 9, 11, 12],
             pentatonic_major: [0, 2, 4, 7, 9, 12],
             pentatonic_minor: [0, 3, 5, 7, 10, 12],
             blues_minor: [0, 3, 5, 6, 7, 10, 12],
@@ -86,9 +85,10 @@
             diminished_hw: [0, 1, 3, 4, 6, 7, 9, 10, 12],
             diminished_wh: [0, 2, 3, 5, 6, 8, 9, 11, 12],
             augmented: [0, 3, 4, 7, 8, 11, 12],
-            double_harmonic: [0, 1, 4, 5, 7, 8, 11, 12],
-            maqam_rast: [0, 2, 3, 5, 7, 9, 10, 12],
-            maqam_bayati: [0, 2, 3, 5, 7, 8, 10, 12],
+            // Maqâmat et dastgâhs : approximations en demi-tons (les vrais intervalles utilisent des quarts de ton).
+            // Rast = Majeure et Bayati = Dastgâh Shur = Phrygien, comme l'annoncent leurs libellés.
+            maqam_rast: [0, 2, 4, 5, 7, 9, 11, 12],
+            maqam_bayati: [0, 1, 3, 5, 7, 8, 10, 12],
             maqam_hijaz: [0, 1, 4, 5, 7, 8, 10, 12],
             maqam_nahawand: [0, 2, 3, 5, 7, 8, 10, 12],
             maqam_kurd: [0, 1, 3, 5, 7, 8, 10, 12],
@@ -115,8 +115,9 @@
             dastgah_chahargah: [0, 1, 4, 5, 7, 8, 11, 12],
             gamelan_slendro: [0, 2, 5, 7, 10, 12],
             gamelan_pelog: [0, 1, 3, 7, 8, 12],
-            gamelan_degung: [0, 2, 3, 7, 9, 12],
-            gamelan_madra: [0, 2, 5, 8, 10, 12]
+            // Degung (La-Ti-Na-Mi-Da, ≈ 80/240/400/80 cents) ≈ B C D F# G ; Madenda ≈ A B C E F
+            gamelan_degung: [0, 1, 3, 7, 8, 12],
+            gamelan_madenda: [0, 2, 3, 7, 8, 12]
         };
 
         const tonicData = {
@@ -162,8 +163,8 @@
             augmented: [0, 1, 2, 4, 4, 6, 7],              // Do Ré# Mi Sol Sol# Si
             gamelan_slendro: [0, 1, 3, 4, 6, 7],           // Do Ré Fa Sol Sib
             gamelan_pelog: [0, 1, 2, 4, 5, 7],             // Do Réb Mib Sol Lab
-            gamelan_degung: [0, 1, 2, 4, 5, 7],            // Do Ré Mib Sol La
-            gamelan_madra: [0, 1, 3, 5, 6, 7]              // Do Ré Fa Lab Sib
+            gamelan_degung: [0, 1, 2, 4, 5, 7],            // Do Réb Mib Sol Lab
+            gamelan_madenda: [0, 1, 2, 4, 5, 7]            // Do Ré Mib Sol Lab
         };
 
         let pianoInstrument = null;
@@ -366,7 +367,7 @@
                         <select class="tonic-select" title="Tonique" aria-label="Tonique">
                             <option value="c">Do</option><option value="c#">Do#</option><option value="db">Ré♭</option>
                             <option value="d">Ré</option><option value="d#">Ré#</option><option value="eb">Mi♭</option>
-                            <option value="e">Mi</option><option value="f">Fa</option><option value="f#">Fa#</option>
+                            <option value="e">Mi</option><option value="f">Fa</option><option value="f#">Fa#</option><option value="gb">Sol♭</option>
                             <option value="g">Sol</option><option value="g#">Sol#</option><option value="ab">La♭</option>
                             <option value="a">La</option><option value="a#">La#</option><option value="bb">Si♭</option>
                             <option value="b">Si</option>
@@ -410,7 +411,6 @@
                                 <option value="byzantine">Byzantine / Double harmonique</option>
                                 <option value="chinese">Chinoise</option>
                                 <option value="chinese_pentatonic">Chinoise pentatonique</option>
-                                <option value="chinese_lü_lü">Chinoise Lü-Lü</option>
                             </optgroup>
                             <optgroup label="Pentatoniques & Blues">
                                 <option value="pentatonic_major">Pentatonique majeure</option>
@@ -428,7 +428,7 @@
                                 <option value="diminished_wh">Diminuée (2-1)</option>
                                 <option value="augmented">Augmentée</option>
                             </optgroup>
-                            <optgroup label="Les Maqâmat">
+                            <optgroup label="Les Maqâmat (approx. en demi-tons)">
                                 <option value="maqam_rast">Maqâm Rast / Majeure</option>
                                 <option value="maqam_bayati">Maqâm Bayati / Dastgâh Shur</option>
                                 <option value="maqam_hijaz">Maqâm Hijaz / Dastgâh Homayoun</option>
@@ -456,7 +456,7 @@
                                     <option value="raga_tanarupi">6. Tanarupi</option>
                                 </optgroup>
                             </optgroup>
-                            <optgroup label="Les Dastgāhs">
+                            <optgroup label="Les Dastgāhs (approx. en demi-tons)">
                                 <option value="dastgah_shur">Dastgâh Shur</option>
                                 <option value="dastgah_mahur">Dastgâh Mâhur</option>
                                 <option value="dastgah_homayoun">Dastgâh Homayoun</option>
@@ -465,8 +465,8 @@
                             <optgroup label="Les Gamelans">
                                 <option value="gamelan_slendro">Gamelan Slendro</option>
                                 <option value="gamelan_pelog">Gamelan Pelog</option>
-                                <option value="gamelan_degung">Gamelan Degung</option>
-                                <option value="gamelan_madra">Gamelan Madra</option>
+                                <option value="gamelan_degung">Gamelan Degung (≈ Pelog)</option>
+                                <option value="gamelan_madenda">Gamelan Madenda (≈ Hirajōshi)</option>
                             </optgroup>
                         </select>
                         <span class="transp-icon" title="Transposition" role="img" aria-label="Transposition"><svg viewBox="0 0 32 22" width="28" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 7.5v5M1.5 10H4"/><path d="M4 8.5h18M4 11.5h18M4 8.5v3"/><path d="M22 8.5 30 3.5v14L22 11.5"/><path d="M11 8.5V4M9.8 3.5h2.4M15 8.5V4M13.8 3.5h2.4M19 8.5V4M17.8 3.5h2.4"/><path d="M9 11.5v3.5a2.5 2.5 0 0 0 2.5 2.5h6a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>
@@ -568,7 +568,8 @@
 
             const items = intervals.map((interval, index) => {
                 const totalVal = tonicObj.semitone + interval;
-                const audioMidi = 60 + totalVal - 12 + transposition;
+                // Hauteur sonore = hauteur écrite + transposition de l'instrument (Bb : -2, Ut : 0, Eb : -9)
+                const audioMidi = 60 + totalVal + transposition;
                 const degreeIndex = (mapping && mapping[index] !== undefined) ? mapping[index] : index;
 
                 const spelled = spellNote(tonicObj, degreeIndex, totalVal);
@@ -579,8 +580,12 @@
                 if (interval === 12) {
                     intervalName = "1";
                 } else {
-                    const expectedSemi = majorSemitones[degreeIndex % 7];
-                    intervalName = `${accidentalFromDiff((interval % 12) - expectedSemi)}${(degreeIndex % 7) + 1}`;
+                    // Le nom suit la lettre réellement écrite (utile quand l'épellation a dû changer de lettre)
+                    const degree = (((letters.indexOf(spelled.letter) - tonicObj.letterIdx) % 7) + 7) % 7;
+                    let diff = (interval % 12) - majorSemitones[degree];
+                    if (diff > 6) diff -= 12;
+                    if (diff < -6) diff += 12;
+                    intervalName = `${accidentalFromDiff(diff)}${degree + 1}`;
                 }
 
                 return { interval, midi: audioMidi, key, accidental, name: intervalName };
@@ -588,6 +593,19 @@
 
             if (isDesc) items.reverse();
             return items;
+        }
+
+        // Repère les notes qui exigent un bécarre : même lettre et même octave qu'une note précédente encore altérée
+        // (ex. Mib puis Mi, ou Fa# puis Fa). Sans lui, la note naturelle se lirait comme la précédente.
+        function naturalFlags(items) {
+            const etat = {};
+            return items.map(item => {
+                const [pitch, octave] = item.key.split('/');
+                const id = pitch[0] + octave;
+                const besoin = item.accidental === '' && !!etat[id];
+                etat[id] = item.accidental;
+                return besoin;
+            });
         }
 
         function renderGenerator(box) {
@@ -626,9 +644,12 @@
                 stave.setContext(context).draw();
                 stave.setNoteStartX(stave.getNoteStartX() + 30);
 
-                const notes = items.map((item) => {
+                const naturels = naturalFlags(items);
+                const notes = items.map((item, i) => {
                     let staveNote = new StaveNote({ clef: "treble", keys: [item.key], duration: "q" });
-                    if (item.accidental === '##') {
+                    if (naturels[i]) {
+                        staveNote.addModifier(new Accidental("n"), 0);
+                    } else if (item.accidental === '##') {
                         staveNote.addModifier(new Accidental("##"), 0);
                     } else if (item.accidental === '#') {
                         staveNote.addModifier(new Accidental("#"), 0);

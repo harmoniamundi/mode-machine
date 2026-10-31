@@ -8,7 +8,7 @@
      versionnées, elles ne changent donc pas.
    Pour forcer une mise à jour du cache après une publication, incrémenter VERSION. */
 
-const VERSION = 'modes-v1';
+const VERSION = 'modes-v2';
 const CACHE_APP = `${VERSION}-app`;
 const CACHE_LIBS = `${VERSION}-libs`;
 
